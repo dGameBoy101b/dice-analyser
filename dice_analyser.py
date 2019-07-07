@@ -6,6 +6,7 @@ class RollPart():
 
 class Dice(RollPart):
     sep = 'd'
+    fudge = 'f'
     def __init__(self, quant: int, size: int, neg: bool = False):
         if not isinstance(quant, int):
             raise TypeError
@@ -103,7 +104,7 @@ assert str(Modifier(-1)) == '-1'
 
 EXIT = 'close'
 WELCOME = 'Welcome to the Mader Dice Analyser.\n'
-HELP = 'Separate modifiers and dice with \''+RollPart.pos+'\' or \''+RollPart.neg+'\' and use \''+Dice.sep+'\' to indicate dice\nThe left hand side of a dice is the quantity and the right hand side is the size.\nFinally, input \''+EXIT+'\' to close this program.\n'
+HELP = 'Separate modifiers and dice with \''+RollPart.pos+'\' or \''+RollPart.neg+'\' and use \''+Dice.sep+'\' to indicate dice.\nThe left hand side of a dice is the quantity and the right hand side is the size.\nThe right hand side of a dice can be \''+Dice.fudge+'\' to roll a number of fudge/fate dice that roll either a 1, 0, or -1 each.\nFinally, input \''+EXIT+'\' to close this program.\n'
 PROMPT = 'Input your dice roll formula (or \''+EXIT+'\' to exit): '
 GOODBYE = 'Thanks for using the Mader Dice Analyser.'
 
@@ -181,7 +182,10 @@ def identify(str0: str) -> list:
         elif part.count(Dice.sep) == 1:
             lhs = part.partition(Dice.sep)[0]
             rhs = part.partition(Dice.sep)[2]
-            if int(lhs) < 0:
+            if rhs == Dice.fudge:
+                part_list.append(Dice(abs(int(lhs)), 3))
+                part_list.append(Modifier(-2*abs(int(lhs))))
+            elif int(lhs) < 0:
                 part_list.append(Dice(int(lhs)*-1, int(rhs), True))
             else:
                 part_list.append(Dice(int(lhs), int(rhs), False))
@@ -196,6 +200,8 @@ assert identify('2d6') == [Dice(2,6)]
 assert identify('2d6-4') == [Dice(2,6),Modifier(-4)]
 assert identify('6-1d4') == [Modifier(6),Dice(1,4,True)]
 assert identify('-2d4') == [Dice(2,4,True)]
+assert identify('-1df') == [Dice(1,3),Modifier(-2)]
+assert identify('3df') == [Dice(3,3),Modifier(-6)]
 
 def main():
     print(WELCOME)
