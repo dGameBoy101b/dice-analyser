@@ -7,35 +7,43 @@ class RollPart():
 class Dice(RollPart):
     sep = 'd'
     fudge = 'f'
-    def __init__(self, quant: int, size: int, neg: bool = False):
+    low = '<'
+    high = '>'
+    def __init__(self, quant: int, size: int, neg: bool = False, drop_high: int = 0, drop_low: int = 0):
         if not isinstance(quant, int):
             raise TypeError
         if not isinstance(size, int):
             raise TypeError
         if not isinstance(neg, bool):
             raise TypeError
+        if not isinstance(drop_high, int):
+            raise TypeError
+        if not isinstance(drop_low, int):
+            raise TypeError
         if size < 2:
             raise ValueError
         if quant < 1:
             raise ValueError
+        if drop_high < 0:
+            raise ValueError
+        if drop_low < 0:
+            raise ValueError
+        if drop_high + drop_low >= quant:
+            raise ValueError
         self.neg = neg
         self.quant = quant
         self.size = size
-        rand = 0
-        count = 0
-        while count < quant:
-            rand += random.randint(1, size)
-            count += 1
+        self.drop_high = drop_high
+        self.drop_low = drop_low
         if neg:
             self.min = -1 * quant * size
             self.max = -1 * quant
             self.avg = -1 * (size + 1) / 2 * quant
-            self.rand = -1 * rand
         else:
             self.min = quant
             self.max = quant * size
             self.avg = (size + 1) / 2 * quant
-            self.rand = rand
+        self.roll()
         return
     def __repr__(self) -> str:
         return 'Dice('+str(self.quant)+','+str(self.size)+','+str(self.neg)+')'
@@ -51,6 +59,24 @@ class Dice(RollPart):
         return self.quant == other.quant and self.size == other.size and self.neg == other.neg
     def __ne__(self, other) -> bool:
         return not self == other
+    def roll(self) -> int:
+        rand_list = []
+        count = 0
+        while count < self.quant:
+            rand_list.append(random.randint(1, size))
+            count += 1
+        rand_list.sort()
+        rand_list=rand_list[self.drop_low:-self.drop_high]
+        rand = 0
+        i = 0
+        while i < len(rand_list):
+            rand += rand_list[i]
+            i += 1
+        if self.neg:
+            self.rand = -1 * rand
+        else:
+            self.rand = rand
+        return self.rand
 assert Dice(1,2) == Dice(1,2, False)
 assert Dice(2,3) != Dice(3,2)
 assert Dice(1,2).quant == 1
