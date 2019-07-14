@@ -63,10 +63,13 @@ class Dice(RollPart):
         rand_list = []
         count = 0
         while count < self.quant:
-            rand_list.append(random.randint(1, size))
+            rand_list.append(random.randint(1, self.size))
             count += 1
         rand_list.sort()
-        rand_list=rand_list[self.drop_low:-self.drop_high]
+        if self.drop_high > 0:
+            rand_list=rand_list[self.drop_low:-self.drop_high]
+        else:
+            rand_list=rand_list[self.drop_low:]
         rand = 0
         i = 0
         while i < len(rand_list):
