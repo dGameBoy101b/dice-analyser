@@ -11,25 +11,25 @@ class Dice(RollPart):
     high = '>'
     def __init__(self, quant: int, size: int, neg: bool = False, drop_high: int = 0, drop_low: int = 0):
         if not isinstance(quant, int):
-            raise TypeError
+            raise TypeError('\'quant\' must be an integer, not a ' + str(type(quant)))
         if not isinstance(size, int):
-            raise TypeError
+            raise TypeError('\'size\' must be and integer, not a ' + str(type(size)))
         if not isinstance(neg, bool):
-            raise TypeError
+            raise TypeError('\'neg\' must be a boolean, not a ' + str(type(neg)))
         if not isinstance(drop_high, int):
-            raise TypeError
+            raise TypeError('\'drop_high\' must be an integer, not a ' + str(type(drop_high)))
         if not isinstance(drop_low, int):
-            raise TypeError
+            raise TypeError('\'drop_low\' must be an integer, not a ' + str(type(drop_low)))
         if size < 2:
-            raise ValueError
+            raise ValueError('\'size\' must be greater than 1, not ' + str(size))
         if quant < 1:
-            raise ValueError
+            raise ValueError('\'quant\' must be greater than 0, not ' + str(quant))
         if drop_high < 0:
-            raise ValueError
+            raise ValueError('\'drop_high\' must be greater than -1, not ' + str(drop_high))
         if drop_low < 0:
-            raise ValueError
+            raise ValueError('\'drop_low\' must be greater than -1, not ' + str(drop_low))
         if drop_high + drop_low >= quant:
-            raise ValueError
+            raise ValueError('the quantity of dice after dropping must be greater than 0, not ' + str(quant - drop_high - drop_low))
         self.neg = neg
         self.quant = quant
         self.size = size
@@ -55,7 +55,7 @@ class Dice(RollPart):
             return Dice.pos+string
     def __eq__(self, other) -> bool:
         if not isinstance(other, Dice):
-            raise TypeError
+            raise TypeError('Dice can only be compared to other Dice, not ' + str(type(other)))
         return self.quant == other.quant and self.size == other.size and self.neg == other.neg
     def __ne__(self, other) -> bool:
         return not self == other
@@ -100,7 +100,7 @@ assert str(Dice(1,2,True)) == '-1d2'
 class Modifier(RollPart):
     def __init__(self, const: int):
         if not isinstance(const, int):
-            raise TypeError
+            raise TypeError('\'const\' must be an integer, not a ' + str(type(const)))
         self.const = const
         self.min = const
         self.max = const
@@ -108,15 +108,15 @@ class Modifier(RollPart):
         self.rand = const
         return
     def __repr__(self) -> str:
-        return 'Modifier('+str(self.const)+')'
+        return 'Modifier(' + str(self.const) + ')'
     def __str__(self) -> str:
         if self.const < 0:
             return str(self.const)
         else:
-            return '+'+str(self.const)
+            return '+' + str(self.const)
     def __eq__(self, other) -> bool:
         if not isinstance(other, Modifier):
-            raise TypeError
+            raise TypeError('Modifer must only be compater to other Modifer, not a ' + str(type(other)))
         return self.const == other.const
     def __ne__(self, other) -> bool:
         return not self == other
@@ -131,55 +131,65 @@ assert str(Modifier(1)) == '+1'
 assert Modifier(1).rand == 1
 assert str(Modifier(-1)) == '-1'
 
-EXIT = 'close'
-WELCOME = 'Welcome to the Mader Dice Analyser.\n'
-HELP = 'Separate modifiers and dice with \''+RollPart.pos+'\' or \''+RollPart.neg+'\' and use \''+Dice.sep+'\' to indicate dice.\nThe left hand side of a dice is the quantity and the right hand side is the size.\nThe right hand side of a dice can be \''+Dice.fudge+'\' to roll a number of fudge/fate dice that roll either a 1, 0, or -1 each.\nFinally, input \''+EXIT+'\' to close this program.\n'
-PROMPT = 'Input your dice roll formula (or \''+EXIT+'\' to exit): '
-GOODBYE = 'Thanks for using the Mader Dice Analyser.'
-
-def minimum(sum_list: list) -> int:
-    minimum = 0
-    for part in sum_list:
-        if not isinstance(part, (Dice, Modifier)):
+class SumList():
+    def __init__(self, parts: list):
+        if not isinstance(parts, list):
+            raise TypeError('\'parts\' must be a list, not a ' +str(type(parts)))
+        for part in parts:
+            if not issubclass(type(part), RollPart):
+                raise TypeError('every element in \'parts\' must be a subclass of RollPart, not ' + str(type(part)))
+        self.parts = parts
+        return
+    def __repr__(self) -> str:
+        return 'SumList(' + repr(self.parts) + ')'
+    def __str__(self):
+        raise NotImplemented('Use \'stat_str()\' instead')
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, SumList):
             raise TypeError
-        minimum += part.min
-    return minimum
-assert minimum([Dice(1,6)]) == 1
-assert minimum([Dice(1,6),Modifier(2)]) == 3
-assert minimum([Dice(2,6)]) == 2
-
-def maximum(sum_list: list) -> list:
-    maximum = 0
-    for part in sum_list:
-        if not isinstance(part, (Dice, Modifier)):
-            raise TypeError
-        maximum += part.max
-    return maximum
-assert maximum([Dice(1,6)]) == 6
-assert maximum([Dice(1,6),Modifier(2)]) == 8
-assert maximum([Dice(2,6)]) == 12
-
-def average(sum_list: list) -> float:
-    average = 0.0
-    for part in sum_list:
-        if not isinstance(part, (Dice, Modifier)):
-            raise TypeError
-        average += part.avg
-    return average
-assert average([Dice(1,6)]) == 3.5
-assert average([Dice(1,6),Modifier(2)]) == 5.5
-assert average([Dice(2,6)]) == 7.0
-
-def rand(sum_list: list) -> int:
-    rand = 0
-    for part in sum_list:
-        if not isinstance(part, (Dice, Modifier)):
-            raise TypeError
-        rand += part.rand
-    return rand
-assert rand([Dice(1,6)]) >= 1 and rand([Dice(1,6)]) <= 6
-assert rand([Dice(1,6),Modifier(2)]) >= 3 and rand([Dice(1,6),Modifier(2)]) <= 8
-assert rand([Dice(2,6)]) >= 2 and rand([Dice(2,6)]) <= 12
+        return self.parts == other.parts
+    def min(self) -> int:
+        minimum = 0
+        for part in self.parts:
+            minimum += part.min
+        return minimum
+    def max(self) -> int:
+        maximum = 0
+        for part in self.parts:
+            maximum += part.max
+        return maximum
+    def avg(self) -> float:
+        avg = 0.0
+        for part in self.parts:
+            avg += part.avg
+        return avg
+    def rand(self) -> int:
+        rand = 0
+        for part in self.parts:
+            rand += part.rand
+        return rand
+    def stat_str(self, stat: str) -> str:
+        str0 = ''
+        for part in self.parts:
+            val = eval('part.' + stat, globals(), locals())
+            if isinstance(part, Dice) and part.neg:
+                str0 += RollPart.neg + str(val)
+            elif isinstance(part, Dice):
+                str0 += RollPart.pos + str(val)
+            elif isinstance(part, Modifier) and val >= 0:
+                str0 += RollPart.pos + str(val)
+            else:
+                str0 += str(val)
+        if str0[0] == RollPart.pos:
+            str0 = str0[1:]
+        return str0
+assert SumList([Dice(1,6),Modifier(2)]) == SumList([Dice(1,6),Modifier(2)])
+assert SumList([Dice(1,6),Modifier(2)]).min() == 3
+assert SumList([Dice(1,6),Modifier(2)]).max() == 8
+assert SumList([Dice(1,6),Modifier(2)]).avg() == 5.5
+assert SumList([Dice(1,6),Modifier(2)]).stat_str('min') == '1+2'
+assert SumList([Dice(1,6),Modifier(2)]).stat_str('max') == '6+2'
+assert SumList([Dice(1,6),Modifier(2)]).stat_str('avg') == '3.5+2'
 
 def separate(str0: str, sep: str) -> list:
     strings = str0.split(sep)
@@ -220,36 +230,48 @@ def identify(str0: str) -> list:
                 part_list.append(Dice(int(lhs), int(rhs), False))
         else:
             part_list.append(Modifier(int(part)))
-    return part_list
-assert identify('1d6')== [Dice(1,6)]
-assert identify('1 d 6') == [Dice(1,6)]
-assert identify('1d6+2') == [Dice(1,6),Modifier(2)]
-assert identify(' 1 d 6 + 2 ') == [Dice(1,6),Modifier(2)]
-assert identify('2d6') == [Dice(2,6)]
-assert identify('2d6-4') == [Dice(2,6),Modifier(-4)]
-assert identify('6-1d4') == [Modifier(6),Dice(1,4,True)]
-assert identify('-2d4') == [Dice(2,4,True)]
-assert identify('-1df') == [Dice(1,3),Modifier(-2)]
-assert identify('3df') == [Dice(3,3),Modifier(-6)]
+    return SumList(part_list)
+assert identify('1d6')== SumList([Dice(1,6)])
+assert identify('1 d 6') == SumList([Dice(1,6)])
+assert identify('1d6+2') == SumList([Dice(1,6),Modifier(2)])
+assert identify(' 1 d 6 + 2 ') == SumList([Dice(1,6),Modifier(2)])
+assert identify('2d6') == SumList([Dice(2,6)])
+assert identify('2d6-4') == SumList([Dice(2,6),Modifier(-4)])
+assert identify('6-1d4') == SumList([Modifier(6),Dice(1,4,True)])
+assert identify('-2d4') == SumList([Dice(2,4,True)])
+assert identify('-1df') == SumList([Dice(1,3),Modifier(-2)])
+assert identify('3df') == SumList([Dice(3,3),Modifier(-6)])
 
-def main():
-    print(WELCOME)
-    print(HELP)
-    while True:
-        in_str = input(PROMPT)
-        if in_str == EXIT:
-            print(GOODBYE)
-            raise SystemExit
-        try:
-            parts = identify(in_str)
-            print('min: '+str(minimum(parts)))
-            print('max: '+str(maximum(parts)))
-            print('average: '+str(average(parts)))
-            print('roll: '+str(rand(parts)))
-            print()
-        except:
-            print(str(sys.exc_info()[0].__name__)+': '+str(sys.exc_info()[1]))
-            print()
-    raise
+class UserInterface():    
+    EXIT = 'close'
+    LOST = 'help'
+    WELCOME = 'Welcome to the Mader Dice Analyser.\n'
+    HELP = 'Separate modifiers and dice with \''+RollPart.pos+'\' or \''+RollPart.neg+'\' and use \''+Dice.sep+'\' to indicate dice.\nThe left hand side of a dice is the quantity and the right hand side is the size.\nThe right hand side of a dice can be \''+Dice.fudge+'\' to roll a number of fudge/fate dice that roll either a 1, 0, or -1 each.\nFinally, input \''+EXIT+'\' to close this program or \''+LOST+'\' to display this help section.\n'
+    PROMPT = 'Input your dice roll formula (or \''+EXIT+'\' to exit or \''+LOST+'\' to show help): '
+    GOODBYE = 'Thanks for using the Mader Dice Analyser.'
+    
+    def main(self):
+        print(self.WELCOME)
+        print(self.HELP)
+        while True:
+            in_str = input(self.PROMPT)
+            if in_str == self.EXIT:
+                print(self.GOODBYE)
+                raise SystemExit
+            elif in_str == self.LOST:
+                print(self.HELP)
+                continue
+            try:
+                parts = identify(in_str)
+                print('min: ' + parts.stat_str('min') + ' = ' + str(parts.min()))
+                print('max: ' + parts.stat_str('max') + ' = ' + str(parts.max()))
+                print('average: ' + parts.stat_str('avg') + ' = ' + str(parts.avg()))
+                print('roll: ' + parts.stat_str('rand') + ' = ' + str(parts.rand()))
+                print()
+            except:
+                print(str(sys.exc_info()[0].__name__)+': '+str(sys.exc_info()[1]))
+                print()
+        raise
 
-main()
+if __name__ == '__main__':
+    UserInterface().main()
