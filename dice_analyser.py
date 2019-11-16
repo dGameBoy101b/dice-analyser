@@ -8,7 +8,7 @@ class UserInterface():
     EXIT = 'close'
     LOST = 'help'
     WELCOME = 'Welcome to the Mader Dice Analyser.\n'
-    HELP = ('Separate modifiers and dice with \''+RollPart.pos+'\' or \''+RollPart.neg+'\' and use \''+Dice.sep+'\' to indicate dice.'
+    HELP = ('Separate modifiers and dice with \''+RollPart.POS+'\' or \''+RollPart.NEG+'\' and use \''+Dice.sep+'\' to indicate dice.'
             +'\nThe left hand side of a dice is the quantity and the right hand side is the size.'
             +'\nThe right hand side of a dice can be \''+Dice.fudge+'\' to roll a number of fudge/fate dice that roll either a 1, 0, or -1 each.'
             +'\nFinally, input \''+EXIT+'\' to close this program or \''+LOST+'\' to display this help section.\n')
@@ -27,10 +27,10 @@ class UserInterface():
     
     def identify(str0: str) -> list:
         str0 = str0.replace(' ','')
-        str1_parts = UserInterface.separate(str0, RollPart.pos)
+        str1_parts = UserInterface.separate(str0, RollPart.POS)
         str2_parts = []
         for part in str1_parts:
-            parts = UserInterface.separate(part, RollPart.neg)
+            parts = UserInterface.separate(part, RollPart.NEG)
             for item in parts:
                 str2_parts.append(item)
         part_list = []
@@ -64,12 +64,14 @@ class UserInterface():
                 continue
             try:
                 parts = UserInterface.identify(in_str)
-                print('min: ' + parts.stat_str('min') + ' = ' + str(parts.min()))
-                print('max: ' + parts.stat_str('max') + ' = ' + str(parts.max()))
-                print('average: ' + parts.stat_str('avg') + ' = ' + str(parts.avg()))
-                print('roll: ' + parts.stat_str('rand') + ' = ' + str(parts.rand()))
+                print('minimum: ' + parts.min_str())
+                print('maximum: ' + parts.max_str())
+                print('average: ' + parts.avg_str())
+                print('roll: ' + parts.rand_str())
                 print()
             except:
+                if __debug__:
+                    raise
                 print(str(sys.exc_info()[0].__name__)+': '+str(sys.exc_info()[1]))
                 print()
         raise

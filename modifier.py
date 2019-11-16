@@ -33,30 +33,30 @@ class Modifier(RollPart):
         '''Determine whether this modifier is not equal to another modifier.'''
         return not self == other
 
-    def min(self) -> int:
+    def min(self) -> [int]:
         '''Calculate the minimum roll of this modifier.'''
-        return self.const
+        return [self.const]
 
-    def max(self) -> int:
+    def max(self) -> [int]:
         '''Calculate the maximum roll of this modifier.'''
-        return self.const
+        return [self.const]
 
-    def avg(self) -> float:
+    def avg(self) -> [float]:
         '''Calculate the average roll of this modifier.'''
-        return self.const
+        return [self.const]
     
-    def rand(self) -> int:
+    def rand(self) -> [int]:
         '''Calculate a random roll of this modifier.'''
-        return self.const
+        return [self.const]
 
 
 assert Modifier(1).const == 1
 assert Modifier(1) == Modifier(1)
 assert Modifier(1) != Modifier(2)
-assert Modifier(1).min() == 1
-assert Modifier(1).max() == 1
-assert Modifier(1).avg() == 1
-assert Modifier(1).rand() == 1
+assert Modifier(1).min() == [1]
+assert Modifier(1).max() == [1]
+assert Modifier(1).avg() == [1]
+assert Modifier(1).rand() == [1]
 assert repr(Modifier(1)) == 'Modifier(1)'
 assert str(Modifier(1)) == '+1'
 assert str(Modifier(-1)) == '-1'
