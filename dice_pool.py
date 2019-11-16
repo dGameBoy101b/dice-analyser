@@ -48,10 +48,11 @@ class Dice(RollPart):
 
     def rand(self) -> [int]:
         '''Calculate a random roll of this dice pool.'''
-        random = [randint(1, self.size)] * self.quant
+        random = [0] * self.quant
         for i in range(self.quant):
+            random[i] = randint(1, self.size)
             if self.neg:
-                total[i] *= -1
+                random[i] *= -1
         return random
 
     def min(self) -> [int]:
