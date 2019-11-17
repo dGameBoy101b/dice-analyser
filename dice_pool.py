@@ -1,9 +1,10 @@
 from roll_part_base import RollPart
-from random import randint
+from random import choice
 
 class Dice(RollPart):
     SEP = 'd'
     FUDGE = 'f'
+    FUDGE_RANGE = [1,0,-1]
     RANGE_START = '{'
     RANGE_END = '}'
     RANGE_SEP = ','
@@ -12,6 +13,15 @@ class Dice(RollPart):
     def __init__(self, quant: int, faces: [int]):
         if not isinstance(quant, int):
             raise TypeError('\'quant\' must be an integer, not a ' + str(type(quant)))
+        if isinstance(faces, int):
+            if faces > Dice.RANGE_BASE:
+                faces = range(Dice.RANGE_BASE, faces + 1)
+            elif faces < Dice.RANGE_BASE * -1:
+                faces = range(faces, Dice.RANGE_BASE * -1 + 1)
+            else:
+                raise ValueError('integer \'faces\' must be greater in magnitude than ' + str(Dice.RANGE_BASE) + ', not ' + str(faces))
+        if isinstance(faces, range):
+            faces = list(faces)
         if not isinstance(faces, list):
             raise TypeError('\'faces\' must be a list of integers, not a ' + str(type(faces)))
         if len(faces) < 2:
@@ -40,7 +50,7 @@ class Dice(RollPart):
             string = Dice.POS + string + str(len(self.faces) - 1 + Dice.RANGE_BASE)
         elif self.faces == list(range((Dice.RANGE_BASE + len(self.faces) - 1) * -1, Dice.RANGE_BASE * -1 + 1)):
             string = Dice.NEG + string + str(len(self.faces) - 1 + Dice.RANGE_BASE)
-        elif self.faces == [1,0,-1]:
+        elif self.faces == Dice.FUDGE_RANGE:
             string = Dice.POS + string + Dice.FUDGE
         else:
             string = Dice.POS + string + Dice.RANGE_START
@@ -65,7 +75,7 @@ class Dice(RollPart):
         '''Calculate a random roll of this dice pool.'''
         random = [0] * self.quant
         for i in range(self.quant):
-            random[i] = choose(self.faces)
+            random[i] = choice(self.faces)
         return random
 
     def min(self) -> [int]:
@@ -80,26 +90,26 @@ class Dice(RollPart):
         '''Calculate the average roll of this dice pool.'''
         return [float(sum(self.faces)) / len(self.faces)] * self.quant
 
-assert Dice(1,list(range(1,2+1))) == Dice(1,list(range(1,2+1)))
-assert Dice(2,list(range(1,3+1))) != Dice(3,list(range(1,2+1)))
-assert Dice(1,list(range(1,2+1))).quant == 1
-assert Dice(1,list(range(1,2+1))).min() == [1]
-assert Dice(1,list(range(1,2+1))).max() == [2]
-assert Dice(1,list(range(1,2+1))).avg() == [1.5]
-assert repr(Dice(1,list(range(1,2+1)))) == 'Dice(1, [1, 2])'
-assert str(Dice(1,list(range(1,2+1)))) == '+1d2'
+assert Dice(1,2) == Dice(1,2)
+assert Dice(2,3) != Dice(3,2)
+assert Dice(1,2).quant == 1
+assert Dice(1,2).min() == [1]
+assert Dice(1,2).max() == [2]
+assert Dice(1,2).avg() == [1.5]
+assert repr(Dice(1,2)) == 'Dice(1, [1, 2])'
+assert str(Dice(1,2)) == '+1d2'
 
-assert Dice(2,list(range(-2,-1+1))).min() == [-2,-2]
-assert Dice(2,list(range(-2,-1+1))).max() == [-1,-1]
-assert Dice(2,list(range(-2,-1+1))).avg() == [-1.5,-1.5]
-assert repr(Dice(1,list(range(-2,-1+1)))) == 'Dice(1, [-2, -1])'
-assert str(Dice(1,list(range(-2,-1+1)))) == '-1d2'
+assert Dice(2,-2).min() == [-2,-2]
+assert Dice(2,-2).max() == [-1,-1]
+assert Dice(2,-2).avg() == [-1.5,-1.5]
+assert repr(Dice(1,-2)) == 'Dice(1, [-2, -1])'
+assert str(Dice(1,-2)) == '-1d2'
 
-assert Dice(2,[1,0,-1]).min() == [-1,-1]
-assert Dice(2,[1,0,-1]).max() == [1,1]
-assert Dice(2,[1,0,-1]).avg() == [0,0]
-assert repr(Dice(2,[1,0,-1])) == 'Dice(2, [1, 0, -1])'
-assert str(Dice(2,[1,0,-1])) == '+2df'
+assert Dice(2,Dice.FUDGE_RANGE).min() == [-1,-1]
+assert Dice(2,Dice.FUDGE_RANGE).max() == [1,1]
+assert Dice(2,Dice.FUDGE_RANGE).avg() == [0,0]
+assert repr(Dice(2,Dice.FUDGE_RANGE)) == 'Dice(2, [1, 0, -1])'
+assert str(Dice(2,Dice.FUDGE_RANGE)) == '+2df'
 
 assert Dice(3,[1,2,4,8]).min() == [1,1,1]
 assert Dice(3,[1,2,4,8]).max() == [8,8,8]
