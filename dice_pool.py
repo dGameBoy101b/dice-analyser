@@ -39,6 +39,8 @@ class Dice(RollPart):
             raise ValueError('\'drop\' must be -1 or greater, not '+str(drop))
         if drop > 1:
             raise ValueError('\'drop\' must be 1 or lesser, not '+str(drop))
+        if quant - abs(drop) < 1:
+            raise ValueError('Must have at least 1 dice left after dropping, not '+str(quant - abs(drop)))
         self.quant = quant
         self.faces = faces
         self.drop = drop
