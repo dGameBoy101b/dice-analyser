@@ -4,7 +4,7 @@ from dice_pool import Dice
 from roll_part_list import PartSum
 import sys
 
-class UserInterface():    
+class UserInterface():
     EXIT = 'close'
     LOST = 'help'
     WELCOME = 'Welcome to the Mader Dice Analyser.\n'
@@ -13,10 +13,14 @@ class UserInterface():
             +'\nThe right hand side of a dice can be \''+Dice.FUDGE+'\' to roll a number of fudge/fate dice that roll either a 1, 0, or -1 each.'
             +'\nThe right hand side of a dice can also be a custom dice range by enclosing a set of numbers with \''+Dice.RANGE_START+'\' and \''+Dice.RANGE_END
             +'\', with each number separated by \''+Dice.RANGE_SEP+'\'.'
+            +'\nThe left hand side may optionally have a \''+Dice.DROP_HIGH+'\' just before the dice separator to indicate that the highest result of that dice pool'
+            +' should be dropped during calculations and rolling.'
+            +'\nSimilarly, the left hand side may instead have a \''+Dice.DROP_LOW+'\' just before the dice separator to indicate that the lowest result of that dice'
+            +' pool should be dropped during calculations and rolling.'
             +'\nFinally, input \''+EXIT+'\' to close this program or \''+LOST+'\' to display this help section.\n')
     PROMPT = 'Input your dice roll formula (or \''+EXIT+'\' to exit or \''+LOST+'\' to show help): '
     GOODBYE = 'Thanks for using the Mader Dice Analyser.'
-    
+
     def separate(str0: str, sep: str) -> [str]:
         strings = str0.split(sep)
         i = 1
@@ -68,10 +72,12 @@ class UserInterface():
                 str5.append(str4[prefix])
                 prefix += 1
         return str5
-    
+
     def identify(str0: str) -> PartSum:
-        parts = UserInterface.splitParts(str0)     
+        #split input
+        parts = UserInterface.splitParts(str0)
         part_list = []
+        #validate input
         for part in parts:
             if part.count(Dice.SEP) > 1:
                 raise ValueError('Must be at most 1 dice separator in a roll part!')
@@ -83,10 +89,28 @@ class UserInterface():
                 raise ValueError('Must be the same number of dice range starters and enders in a roll part!')
             if part.find(Dice.RANGE_START) > part.find(Dice.RANGE_END):
                 raise ValueError('A dice range starter must come before a dice range ender in a roll part!')
-            
+            if part.count(Dice.DROP_HIGH) > 1:
+                raise ValueError('Must be at most 1 drop high flag in a roll part!')
+            if part.count(Dice.DROP_LOW) > 1:
+                raise ValueError('Must be at most 1 drop low flag in a roll part!')
+            if part.find(Dice.DROP_HIGH) != -1 and part.find(Dice.DROP_LOW) != -1:
+                raise ValueError('Cannot have both a drop high and a drop low flag in a roll part!')
+            if part.find(Dice.DROP_HIGH) != -1 and part.find(Dice.DROP_HIGH) + len(Dice.DROP_HIGH) != part.find(Dice.SEP):
+                raise ValueError('A drop high flag must come immediately before a dice separator in a roll part!')
+            if part.find(Dice.DROP_LOW) != -1 and part.find(Dice.DROP_LOW) + len(Dice.DROP_LOW) != part.find(Dice.SEP):
+                raise ValueError('A drop low flag must com immediately before a dice separator in a roll part!')
+            #interpret input
             if part.count(Dice.SEP) == 1:
                 lhs = part.partition(Dice.SEP)[0]
                 rhs = part.partition(Dice.SEP)[2]
+                if lhs.find(Dice.DROP_HIGH) != -1:
+                    drop = 1
+                    lhs = lhs[: -len(Dice.DROP_LOW)]
+                elif lhs.find(Dice.DROP_LOW) != -1:
+                    drop = -1
+                    lhs = lhs[: -len(Dice.DROP_LOW)]
+                else:
+                    drop = 0
                 if rhs == Dice.FUDGE:
                     faces = Dice.FUDGE_RANGE
                     if lhs[0] == RollPart.NEG:
@@ -106,7 +130,8 @@ class UserInterface():
                         faces *= -1
                     else:
                         raise TypeError('Unexpected \'faces\' type '+repr(type(faces)))
-                part_list.append(Dice(abs(int(lhs)), faces))
+                dice = Dice(abs(int(lhs)), faces, drop)
+                part_list.append(Dice(abs(int(lhs)), faces, drop))
             else:
                 part_list.append(Modifier(int(part)))
         return PartSum(part_list)
@@ -130,8 +155,8 @@ class UserInterface():
                 print('roll: ' + parts.rand_str())
                 print()
             except:
-                if __debug__:
-                    raise
+##                if __debug__:
+##                    raise
                 print(str(sys.exc_info()[0].__name__)+': '+str(sys.exc_info()[1]))
                 print()
         raise SystemExit('Abnormal exit!')
@@ -152,6 +177,8 @@ assert UserInterface.identify('6-1d4') == PartSum([Modifier(6),Dice(1,-4)])
 assert UserInterface.identify('-2d4') == PartSum([Dice(2,-4)])
 assert UserInterface.identify('-1df') == PartSum([Dice(1,Dice.FUDGE_RANGE)])
 assert UserInterface.identify('3df') == PartSum([Dice(3,Dice.FUDGE_RANGE)])
+assert UserInterface.identify('2vd6') == PartSum([Dice(2,6,1)])
+assert UserInterface.identify('2^d6') == PartSum([Dice(2,6,-1)])
 
 if __name__ == '__main__':
     UserInterface().main()
