@@ -2,11 +2,14 @@ from roll_part_base import RollPart
 from modifier import Modifier
 from dice_pool import Dice
 from roll_part_list import PartSum
+from formula_store import FormulaDatabase
 import sys
 
 class UserInterface():
     EXIT = 'close'
     LOST = 'help'
+    SAVE = 'save'
+    LOAD = 'load'
     WELCOME = 'Welcome to the Mader Dice Analyser.\n'
     HELP = ('Separate modifiers and dice with \''+RollPart.POS+'\' or \''+RollPart.NEG+'\' and use \''+Dice.SEP+'\' to indicate dice.'
             +'\nThe left hand side of a dice is the quantity and the right hand side is the size.'
@@ -136,49 +139,95 @@ class UserInterface():
                 part_list.append(Modifier(int(part)))
         return PartSum(part_list)
 
+    def save(name :str, formula :PartSum):
+        '''Attempt to save the given formula using the given name.'''
+        if not isinstance(name,str):
+            raise TypeError('\'name\' must be a string, not a '+str(type(name)))
+        if isinstance(formula,type(None)):
+            print('A dice roll must be executed first before it can be saved!')
+            return
+        if not isinstance(formula,PartSum):
+            raise TypeError('\'formula\' must be a PartSum, not a '+str(type(formula)))
+        try:
+            FormulaDatabase().save(name, formula, False)
+            print(repr(name)+' formula was created: '+str(formula))
+        except FileExistsError:
+            overwrite = input('A formula with the name '+repr(name)+' already exists! Do you want to overwrite?[y/n]:')
+            if overwrite.lower().strip()[0] == 'y':
+                FormulaDatabase().save(name, formula, True)
+                print(repr(name)+' formula was overwritten: '+str(formula))
+            else:
+                print(repr(name)+' formula was left unchanged: '+str(FormulaDatabase()[name]))
+
+    def load(name :str):
+        '''Attempt to load dice formula given its name.'''
+        if not isinstance(name,str):
+            raise TypeError('\'name\' must be a string, not a '+str(type(name)))
+        try:
+            formula = FormulaDatabase()[name]
+            print(repr(name)+' formula loaded: '+str(formula))
+            UserInterface.printStats(formula)
+        except KeyError:
+            print('A formula with that name does not exist!')
+
+    def close():
+        '''Close the program.'''
+        print(UserInterface.GOODBYE)
+        raise SystemExit
+
+    def lost():
+        '''Open the help section.'''
+        print(UserInterface.HELP)
+
+    def printStats(parts :PartSum):
+        if not isinstance(parts,PartSum):
+            raise TypeError('\'parts\' must be a PartSum, not a '+str(type(parts)))
+        print('minimum: ' + parts.min_str())
+        print('maximum: ' + parts.max_str())
+        print('average: ' + parts.avg_str())
+        print('roll: ' + parts.rand_str())
+
     def main(self):
-        print(self.WELCOME)
-        print(self.HELP)
+        print(UserInterface.WELCOME)
+        print(UserInterface.HELP)
+        parts = None
         while True:
-            in_str = input(self.PROMPT)
+            in_str = input(UserInterface.PROMPT)
             if in_str == self.EXIT:
-                print(self.GOODBYE)
-                raise SystemExit
-            elif in_str == self.LOST:
-                print(self.HELP)
-                continue
-            try:
-                parts = UserInterface.identify(in_str)
-                print('minimum: ' + parts.min_str())
-                print('maximum: ' + parts.max_str())
-                print('average: ' + parts.avg_str())
-                print('roll: ' + parts.rand_str())
-                print()
-            except:
-##                if __debug__:
-##                    raise
-                print(str(sys.exc_info()[0].__name__)+': '+str(sys.exc_info()[1]))
-                print()
+                UserInterface.close()
+            elif in_str == UserInterface.LOST:
+                UserInterface.lost()
+            elif in_str.find(UserInterface.SAVE) == 0:
+                UserInterface.save(in_str[len(UserInterface.SAVE) + 1 :], parts)
+            elif in_str.find(UserInterface.LOAD) == 0:
+                UserInterface.load(in_str[len(UserInterface.LOAD) + 1 :])
+            else:
+                try:
+                    parts = UserInterface.identify(in_str)
+                    UserInterface.printStats(parts) 
+                except BaseException as e:
+                    print(e)
+            print()
         raise SystemExit('Abnormal exit!')
 
-assert UserInterface.separate('a b c', ' ') == ['a',' b',' c']
-assert UserInterface.separate(' a b c ', ' ') == [' a',' b',' c',' ']
-assert UserInterface.separate(',',',') == [',']
-assert UserInterface.separate('$$$','$') == ['$','$','$']
-assert UserInterface.separate('->a->b->c->','->') == ['->a','->b','->c','->']
-
-assert UserInterface.identify('1d6')== PartSum([Dice(1,6)])
-assert UserInterface.identify('1 d 6') == PartSum([Dice(1,6)])
-assert UserInterface.identify('1d6+2') == PartSum([Dice(1,6),Modifier(2)])
-assert UserInterface.identify(' 1 d 6 + 2 ') == PartSum([Dice(1,6),Modifier(2)])
-assert UserInterface.identify('2d6') == PartSum([Dice(2,6)])
-assert UserInterface.identify('2d6-4') == PartSum([Dice(2,6),Modifier(-4)])
-assert UserInterface.identify('6-1d4') == PartSum([Modifier(6),Dice(1,-4)])
-assert UserInterface.identify('-2d4') == PartSum([Dice(2,-4)])
-assert UserInterface.identify('-1df') == PartSum([Dice(1,Dice.FUDGE_RANGE)])
-assert UserInterface.identify('3df') == PartSum([Dice(3,Dice.FUDGE_RANGE)])
-assert UserInterface.identify('2vd6') == PartSum([Dice(2,6,1)])
-assert UserInterface.identify('2^d6') == PartSum([Dice(2,6,-1)])
+##assert UserInterface.separate('a b c', ' ') == ['a',' b',' c']
+##assert UserInterface.separate(' a b c ', ' ') == [' a',' b',' c',' ']
+##assert UserInterface.separate(',',',') == [',']
+##assert UserInterface.separate('$$$','$') == ['$','$','$']
+##assert UserInterface.separate('->a->b->c->','->') == ['->a','->b','->c','->']
+##
+##assert UserInterface.identify('1d6')== PartSum([Dice(1,6)])
+##assert UserInterface.identify('1 d 6') == PartSum([Dice(1,6)])
+##assert UserInterface.identify('1d6+2') == PartSum([Dice(1,6),Modifier(2)])
+##assert UserInterface.identify(' 1 d 6 + 2 ') == PartSum([Dice(1,6),Modifier(2)])
+##assert UserInterface.identify('2d6') == PartSum([Dice(2,6)])
+##assert UserInterface.identify('2d6-4') == PartSum([Dice(2,6),Modifier(-4)])
+##assert UserInterface.identify('6-1d4') == PartSum([Modifier(6),Dice(1,-4)])
+##assert UserInterface.identify('-2d4') == PartSum([Dice(2,-4)])
+##assert UserInterface.identify('-1df') == PartSum([Dice(1,Dice.FUDGE_RANGE)])
+##assert UserInterface.identify('3df') == PartSum([Dice(3,Dice.FUDGE_RANGE)])
+##assert UserInterface.identify('2vd6') == PartSum([Dice(2,6,1)])
+##assert UserInterface.identify('2^d6') == PartSum([Dice(2,6,-1)])
 
 if __name__ == '__main__':
     UserInterface().main()
