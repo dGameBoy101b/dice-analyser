@@ -20,6 +20,10 @@ class UserInterface():
             +' should be dropped during calculations and rolling.'
             +'\nSimilarly, the left hand side may instead have a \''+Dice.DROP_LOW+'\' just before the dice separator to indicate that the lowest result of that dice'
             +' pool should be dropped during calculations and rolling.'
+            +'\nThe command \''+SAVE+'\' can be entered followed by a space and a formula name to save the last rolled formula that can be loaded again, even after'
+            +' re-launching the program, by entering the command \''+LOAD+'\' followed by a space and the same formula name to roll that formula.'
+            +'\nLoaded formulas cannot be saved again since the have already been saved and can be reloaded an number of times.'
+            +'\nHowever, saved formulas can be updated by saving a different formula in the same name, discarding the old formula.'
             +'\nFinally, input \''+EXIT+'\' to close this program or \''+LOST+'\' to display this help section.\n')
     PROMPT = 'Input your dice roll formula (or \''+EXIT+'\' to exit or \''+LOST+'\' to show help): '
     GOODBYE = 'Thanks for using the Mader Dice Analyser.'
